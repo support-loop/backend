@@ -34,16 +34,10 @@ type databaseConfig struct {
 	MaxIdleConns    int           `koanf:"max_idle_conns"`
 }
 
-type exampleConfig struct {
-	Example string `koanf:"example"`
-}
-
 type Config struct {
 	HTTP     http           `koanf:"http"`
 	Telegram telegram       `koanf:"telegram"`
 	Database databaseConfig `koanf:"database"`
-
-	Example exampleConfig `koanf:"example"`
 }
 
 func Default() Config {
@@ -63,15 +57,11 @@ func Default() Config {
 			Token: "",
 		},
 		Database: databaseConfig{
-			URL:             "mariadb://example:example@127.0.0.1:3306/example?charset=utf8mb4&parseTime=True&loc=UTC",
+			URL:             "mariadb://support-loop:support-loop@127.0.0.1:3306/support-loop?charset=utf8mb4&parseTime=True&loc=UTC",
 			ConnMaxIdleTime: 0,
 			ConnMaxLifetime: 0,
 			MaxOpenConns:    0,
 			MaxIdleConns:    0,
-		},
-
-		Example: exampleConfig{
-			Example: "example",
 		},
 	}
 }

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/capcom6/go-project-template/internal/example"
 	"github.com/go-core-fx/fiberfx"
 	"github.com/go-core-fx/fiberfx/openapi"
 	"github.com/go-core-fx/sqlfx"
@@ -43,10 +42,5 @@ func Module() fx.Option {
 				}
 			},
 		),
-		fx.Provide(func(cfg Config) example.Config {
-			return example.Config{
-				Example: cfg.Example.Example,
-			}
-		}),
 	)
 }
