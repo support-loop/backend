@@ -7,7 +7,6 @@ import (
 	"github.com/capcom6/go-project-template/internal/bot"
 	"github.com/capcom6/go-project-template/internal/config"
 	"github.com/capcom6/go-project-template/internal/db"
-	"github.com/capcom6/go-project-template/internal/example"
 	"github.com/capcom6/go-project-template/internal/server"
 	"github.com/go-core-fx/bunfx"
 	"github.com/go-core-fx/fiberfx"
@@ -65,7 +64,6 @@ func run(ctx context.Context, version healthfx.Version) error {
 		//
 		// BUSINESS MODULES
 		fx.Supply(version),
-		example.Module(true),
 
 		fx.Invoke(func(lc fx.Lifecycle, logger *zap.Logger) {
 			lc.Append(fx.Hook{
