@@ -22,7 +22,7 @@ Search-and-replace table:
 
 | Find | Replace with |
 |---|---|
-| `github.com/capcom6/go-project-template` | `your/module/path` (in `go.mod`, all `.go` imports) |
+| `github.com/support-loop/backend` | `your/module/path` (in `go.mod`, all `.go` imports) |
 | binary name = dir name | used in `Makefile` `BINARY_NAME`, `.goreleaser.yaml` build |
 
 **`main.go`** — update swagger annotations and contact info:

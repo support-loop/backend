@@ -1,4 +1,5 @@
 @baseURL=http://localhost:3000
+@webhookSecret={{$dotenv WEBHOOK__SECRET}}
 
 # ============================================================
 # 1. HEALTH
@@ -18,3 +19,87 @@ GET {{baseURL}}/health/startup HTTP/1.1
 
 ###
 GET {{baseURL}}/metrics HTTP/1.1
+
+# ============================================================
+# 2. WEBHOOK INGEST
+# ============================================================
+
+# Expect 200: valid payload accepted
+###
+POST {{baseURL}}/api/v1/webhooks/omnidesk HTTP/1.1
+Authorization: {{webhookSecret}}
+Content-Type: application/json
+
+{
+  "event_type": "ticket.message.created",
+  "case_id": "423208679",
+  "case_number": "130-809267",
+  "case_subject": "Не работает личный кабинет",
+  "case_description": "<p>Здравствуйте, не могу войти в личный кабинет.</p>",
+  "last_message_id": "987654321",
+  "user_email": "book174@bk.ru",
+  "user_lang": "ru"
+}
+
+# Expect 200: duplicate (same case_id + event_type), idempotent, processed exactly once
+###
+POST {{baseURL}}/api/v1/webhooks/omnidesk HTTP/1.1
+Authorization: {{webhookSecret}}
+Content-Type: application/json
+
+{
+  "event_type": "ticket.message.created",
+  "case_id": "423208679",
+  "case_number": "130-809267",
+  "case_subject": "Не работает личный кабинет",
+  "case_description": "<p>Здравствуйте, не могу войти в личный кабинет.</p>",
+  "last_message_id": "987654321",
+  "user_email": "book174@bk.ru",
+  "user_lang": "ru"
+}
+
+# Expect 200: unknown event_type ignored (allowlist rejects, counter increments)
+###
+POST {{baseURL}}/api/v1/webhooks/omnidesk HTTP/1.1
+Authorization: {{webhookSecret}}
+Content-Type: application/json
+
+{
+  "event_type": "ticket.unknown",
+  "case_id": "423208679"
+}
+
+# Expect 403: wrong secret (auth_failures metric increments)
+###
+POST {{baseURL}}/api/v1/webhooks/omnidesk HTTP/1.1
+Authorization: wrong-secret
+Content-Type: application/json
+
+{
+  "event_type": "ticket.message.created",
+  "case_id": "423208679"
+}
+
+# Expect 400: malformed body, case_id non-numeric (DTO validation)
+###
+POST {{baseURL}}/api/v1/webhooks/omnidesk HTTP/1.1
+Authorization: {{webhookSecret}}
+Content-Type: application/json
+
+{
+  "event_type": "ticket.message.created",
+  "case_id": "abc"
+}
+
+# Expect 200: ticket.closed with real Russian enum case_status value
+###
+POST {{baseURL}}/api/v1/webhooks/omnidesk HTTP/1.1
+Authorization: {{webhookSecret}}
+Content-Type: application/json
+
+{
+  "event_type": "ticket.closed",
+  "case_id": "423208679",
+  "case_number": "130-809267",
+  "case_status": "закрытое"
+}

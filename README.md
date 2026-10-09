@@ -11,7 +11,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/capcom6/go-project-template">
+  <a href="https://github.com/support-loop/backend">
     <img src="https://raw.githubusercontent.com/golang-samples/gopher-vector/master/gopher.png" alt="Logo" width="120" height="120">
   </a>
 
@@ -20,12 +20,12 @@
   <p align="center">
     Opinionated Go service template with Fiber API, OpenAPI docs, Telegram bot wiring, health endpoints, and Fx-based modular DI.
     <br />
-    <a href="https://github.com/capcom6/go-project-template"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/support-loop/backend"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/capcom6/go-project-template/issues">Report Bug</a>
+    <a href="https://github.com/support-loop/backend/issues">Report Bug</a>
     ·
-    <a href="https://github.com/capcom6/go-project-template/issues">Request Feature</a>
+    <a href="https://github.com/support-loop/backend/issues">Request Feature</a>
   </p>
 </div>
 
@@ -99,7 +99,7 @@ Follow these steps to run the service locally.
 
 1. Clone the repo.
    ```sh
-   git clone https://github.com/capcom6/go-project-template.git
+   git clone https://github.com/support-loop/backend.git
    cd go-project-template
    ```
 2. Download dependencies.
@@ -182,7 +182,7 @@ make coverage
 - [ ] Auth middleware and RBAC
 - [ ] CI release pipeline hardening
 
-See the [open issues](https://github.com/capcom6/go-project-template/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/support-loop/backend/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -220,7 +220,7 @@ Distributed under the Apache 2.0 License. See `LICENSE` for more information.
 
 Maintainer: [@capcom6](https://github.com/capcom6)
 
-Project Link: [https://github.com/capcom6/go-project-template](https://github.com/capcom6/go-project-template)
+Project Link: [https://github.com/support-loop/backend](https://github.com/support-loop/backend)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -241,15 +241,15 @@ Project Link: [https://github.com/capcom6/go-project-template](https://github.co
 
 <!-- MARKDOWN LINKS & IMAGES -->
 [contributors-shield]: https://img.shields.io/github/contributors/capcom6/go-project-template.svg?style=for-the-badge
-[contributors-url]: https://github.com/capcom6/go-project-template/graphs/contributors
+[contributors-url]: https://github.com/support-loop/backend/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/capcom6/go-project-template.svg?style=for-the-badge
-[forks-url]: https://github.com/capcom6/go-project-template/network/members
+[forks-url]: https://github.com/support-loop/backend/network/members
 [stars-shield]: https://img.shields.io/github/stars/capcom6/go-project-template.svg?style=for-the-badge
-[stars-url]: https://github.com/capcom6/go-project-template/stargazers
+[stars-url]: https://github.com/support-loop/backend/stargazers
 [issues-shield]: https://img.shields.io/github/issues/capcom6/go-project-template.svg?style=for-the-badge
-[issues-url]: https://github.com/capcom6/go-project-template/issues
+[issues-url]: https://github.com/support-loop/backend/issues
 [license-shield]: https://img.shields.io/github/license/capcom6/go-project-template.svg?style=for-the-badge
-[license-url]: https://github.com/capcom6/go-project-template/blob/master/LICENSE
+[license-url]: https://github.com/support-loop/backend/blob/master/LICENSE
 [go-shield]: https://img.shields.io/badge/go-1.25%2B-00ADD8?style=for-the-badge&logo=go
 [go-url]: https://go.dev/
 [fiber-shield]: https://img.shields.io/badge/Fiber-v2-00b894?style=for-the-badge

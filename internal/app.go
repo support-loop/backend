@@ -6,17 +6,17 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/capcom6/go-project-template/internal/commands"
 	"github.com/go-core-fx/healthfx"
 	"github.com/samber/lo"
+	"github.com/support-loop/backend/internal/commands"
 	"github.com/urfave/cli/v3"
 )
 
 func Run(version healthfx.Version) {
 	app := &cli.Command{
-		Name:           "go-project-template",
-		Usage:          "Example Go project with HTTP server and Telegram bot",
-		Description:    "Example Go project with HTTP server and Telegram bot",
+		Name:           "support-loop",
+		Usage:          "Support assistant service: OmniDesk webhook ingest with dedup and in-process background processing",
+		Description:    "Support assistant service: OmniDesk webhook ingest with dedup and in-process background processing",
 		Version:        version.Version,
 		DefaultCommand: "serve",
 		Flags:          []cli.Flag{},

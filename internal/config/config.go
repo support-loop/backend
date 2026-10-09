@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-core-fx/config"
+	"github.com/support-loop/backend/internal/ingest"
 )
 
 type http struct {
@@ -22,10 +23,6 @@ type openAPIConfig struct {
 	PublicPath string `koanf:"public_path"`
 }
 
-type telegram struct {
-	Token string `koanf:"token"`
-}
-
 type databaseConfig struct {
 	URL             string        `koanf:"url"`
 	ConnMaxIdleTime time.Duration `koanf:"conn_max_idle_time"`
@@ -34,10 +31,21 @@ type databaseConfig struct {
 	MaxIdleConns    int           `koanf:"max_idle_conns"`
 }
 
+type webhookConfig struct {
+	Secret        string   `koanf:"secret"`
+	SecretHeader  string   `koanf:"secret_header"`
+	AllowedEvents []string `koanf:"allowed_events"`
+}
+
+type workerConfig struct {
+	QueueSize int `koanf:"queue_size"`
+}
+
 type Config struct {
 	HTTP     http           `koanf:"http"`
-	Telegram telegram       `koanf:"telegram"`
 	Database databaseConfig `koanf:"database"`
+	Webhook  webhookConfig  `koanf:"webhook"`
+	Worker   workerConfig   `koanf:"worker"`
 }
 
 func Default() Config {
@@ -53,9 +61,6 @@ func Default() Config {
 				PublicPath: "",
 			},
 		},
-		Telegram: telegram{
-			Token: "",
-		},
 		Database: databaseConfig{
 			URL:             "mariadb://support-loop:support-loop@127.0.0.1:3306/support-loop?charset=utf8mb4&parseTime=True&loc=UTC",
 			ConnMaxIdleTime: 0,
@@ -63,8 +68,21 @@ func Default() Config {
 			MaxOpenConns:    0,
 			MaxIdleConns:    0,
 		},
+		Webhook: webhookConfig{
+			Secret: "",
+			// OmniDesk sends the shared secret in the fixed Authorization
+			// header. Value format (raw vs Bearer vs Basic) is unverified
+			// (W5); the handler compares the raw value constant-time.
+			SecretHeader:  "Authorization",
+			AllowedEvents: []string{ingest.EventTypeTicketMessageCreated, ingest.EventTypeTicketClosed},
+		},
+		Worker: workerConfig{
+			QueueSize: defaultWorkerQueueSize,
+		},
 	}
 }
+
+const defaultWorkerQueueSize = 100
 
 func New() (Config, error) {
 	cfg := Default()
