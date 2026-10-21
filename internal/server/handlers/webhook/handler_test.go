@@ -1,6 +1,7 @@
 package webhook_test
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -53,7 +54,7 @@ func newTestApp(cfg ingest.Config) (*fiber.App, *prometheus.Registry) {
 	})
 	v1 := app.Group("/api/v1")
 	v1.Use(validation.Middleware)
-	h := webhook.New(svc, cfg, validator.New())
+	h := webhook.New(svc, cfg, metrics, validator.New())
 	h.Register(v1)
 	return app, reg
 }
@@ -116,33 +117,55 @@ func validBody() string {
 	return `{"event_type":"ticket.message.created","case_id":"123456789","last_message_id":"98765"}`
 }
 
+// assertAuthFailures asserts the auth-failure counter of the webhook. The
+// counter is incremented in the keyauth ErrorHandler closure, where the auth
+// decision is made, so it is the only proof that the rejection was counted.
+func assertAuthFailures(t *testing.T, reg *prometheus.Registry, want float64) {
+	t.Helper()
+	if got := counterValue(t, reg, "assistant_webhook_auth_failures_total", nil); got != want {
+		t.Fatalf("auth failures = %v, want %v", got, want)
+	}
+}
+
 func TestWebhookMissingSecretForbidden(t *testing.T) {
 	t.Parallel()
-	app, _ := newTestApp(testIngestConfig())
+	app, reg := newTestApp(testIngestConfig())
 	resp := doPost(t, app, validBody(), "")
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want 401", resp.StatusCode)
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", resp.StatusCode)
+	}
+	assertAuthFailures(t, reg, 1)
+	// The 403 body is the same JSON error response as the rest of the API.
+	body := responseBody(t, resp)
+	var payload fiberfx.ErrorResponse
+	if err := json.Unmarshal([]byte(body), &payload); err != nil {
+		t.Fatalf("decode error body %q: %v", body, err)
+	}
+	if payload.Code != http.StatusForbidden {
+		t.Fatalf("error body code = %d, want 403", payload.Code)
 	}
 }
 
 func TestWebhookWrongSecretForbidden(t *testing.T) {
 	t.Parallel()
-	app, _ := newTestApp(testIngestConfig())
+	app, reg := newTestApp(testIngestConfig())
 	resp := doPost(t, app, validBody(), "wrong-secret")
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want 401", resp.StatusCode)
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", resp.StatusCode)
 	}
+	assertAuthFailures(t, reg, 1)
 }
 
 func TestWebhookUnconfiguredSecretForbidden(t *testing.T) {
 	t.Parallel()
 	cfg := testIngestConfig()
 	cfg.Secret = ""
-	app, _ := newTestApp(cfg)
+	app, reg := newTestApp(cfg)
 	resp := doPost(t, app, validBody(), "")
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want 401", resp.StatusCode)
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", resp.StatusCode)
 	}
+	assertAuthFailures(t, reg, 1)
 }
 
 func TestWebhookBadBodyBadRequest(t *testing.T) {

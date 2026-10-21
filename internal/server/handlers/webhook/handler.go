@@ -6,6 +6,7 @@ import (
 	"crypto/subtle"
 	"fmt"
 
+	"github.com/go-core-fx/fiberfx"
 	"github.com/go-core-fx/fiberfx/handler"
 	"github.com/go-core-fx/fiberfx/validation"
 	"github.com/go-playground/validator/v10"
@@ -21,12 +22,14 @@ type Handler struct {
 
 	service *ingest.Service
 	config  ingest.Config
+	metrics *ingest.Metrics
 }
 
 // New creates a new webhook HTTP handler.
 func New(
 	service *ingest.Service,
 	config ingest.Config,
+	metrics *ingest.Metrics,
 	validator *validator.Validate,
 ) handler.Handler {
 	return &Handler{
@@ -35,6 +38,7 @@ func New(
 		},
 		service: service,
 		config:  config,
+		metrics: metrics,
 	}
 }
 
@@ -51,12 +55,23 @@ func (h *Handler) Register(r fiber.Router) {
 // shared secret travels in the fixed Authorization header; the value format
 // (raw token vs Bearer vs Basic) is unverified (W5), so the raw header value
 // is compared constant-time against the configured secret.
+//
+// The auth decision happens here, in the HTTP layer: a rejected request never
+// reaches the service, so the service cannot count it. The ErrorHandler
+// therefore owns both the 403 status and the auth-failure counter - the
+// documented exception to the "metrics live in services" rule.
 func (h *Handler) auth() fiber.Handler {
 	return keyauth.New(keyauth.Config{
 		KeyLookup:  "header:" + h.config.SecretHeader,
 		AuthScheme: "",
 		Validator: func(_ *fiber.Ctx, key string) (bool, error) {
 			return subtle.ConstantTimeCompare([]byte(key), []byte(h.config.Secret)) == 1, nil
+		},
+		ErrorHandler: func(c *fiber.Ctx, _ error) error {
+			h.metrics.IncAuthFailures()
+			return c.Status(fiber.StatusForbidden).JSON(
+				fiberfx.NewErrorResponse("unauthorized", fiber.StatusForbidden, nil),
+			)
 		},
 	})
 }
@@ -68,7 +83,7 @@ func (h *Handler) auth() fiber.Handler {
 //	@Param			request	body	Request	true	"Webhook payload"
 //	@Success		200
 //	@Failure		400	{object}	fiberfx.ErrorResponse
-//	@Failure		401	{object}	fiberfx.ErrorResponse
+//	@Failure		403	{object}	fiberfx.ErrorResponse
 //	@Failure		500	{object}	fiberfx.ErrorResponse
 //	@Router			/webhooks/omnidesk [post]
 //
@@ -79,9 +94,31 @@ func (h *Handler) post(c *fiber.Ctx, req *Request) error {
 	if _, err := h.service.Process(c.Context(), worker.Event{
 		EventType: req.EventType,
 		CaseID:    int64(req.CaseID),
+		SubjectID: resolveSubjectID(req),
 		Payload:   bytes.Clone(c.Body()),
 	}); err != nil {
 		return fmt.Errorf("process webhook event: %w", err)
 	}
 	return nil
+}
+
+// resolveSubjectID returns the normalized subject id of the event: the
+// identity of the concrete thing the event is about, within the case.
+//
+// Two body shapes must work:
+//
+//  1. Our own rule template injects "subject_id" as a field of our contract
+//     (for the message rule: "[last_message_id]"), exactly like it injects
+//     "event_type".
+//  2. The rule may be configured with the standard OmniDesk body instead,
+//     which carries the native "last_message_id" field.
+//
+// The injected field wins, the native field is the fallback. With neither the
+// subject is empty and the event deduplicates at case level, which is
+// correct for one-shot case events (for example "ticket.closed").
+func resolveSubjectID(req *Request) string {
+	if req.SubjectID != "" {
+		return req.SubjectID
+	}
+	return req.LastMessageID
 }

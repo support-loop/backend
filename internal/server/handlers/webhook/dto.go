@@ -13,26 +13,31 @@ import (
 // event type, so the rule template injects the event_type literal; the
 // allowlist in ingest.Config validates it.
 type Request struct {
-	EventType       string            `json:"event_type"       validate:"required"`
-	CaseID          CaseID            `json:"case_id"          validate:"required,gt=0"`
-	CaseNumber      string            `json:"case_number"`
-	CaseSubject     string            `json:"case_subject"`
-	CaseDescription string            `json:"case_description"`
-	CaseURL         string            `json:"case_url"`
-	NoteText        string            `json:"note_text"`
-	LastMessage     string            `json:"last_message"`
-	LastMessageID   string            `json:"last_message_id"`
-	CaseGroup       string            `json:"case_group"`
-	CasePriority    string            `json:"case_priority"`
-	CaseStatus      string            `json:"case_status"`
-	CaseTags        string            `json:"case_tags"`
-	StaffID         string            `json:"staff_id"`
-	StaffFullName   string            `json:"staff_full_name"`
-	UserFullName    string            `json:"user_full_name"`
-	UserEmail       string            `json:"user_email"`
-	UserID          string            `json:"user_id"`
-	UserLang        string            `json:"user_lang"`
-	CustomFields    map[string]string `json:"-"`
+	EventType       string `json:"event_type"       validate:"required"`
+	CaseID          CaseID `json:"case_id"          validate:"required,gt=0"`
+	CaseNumber      string `json:"case_number"`
+	CaseSubject     string `json:"case_subject"`
+	CaseDescription string `json:"case_description"`
+	CaseURL         string `json:"case_url"`
+	NoteText        string `json:"note_text"`
+	LastMessage     string `json:"last_message"`
+	LastMessageID   string `json:"last_message_id"`
+	// SubjectID is the discriminator we inject into our own rule template
+	// body, exactly like EventType: it names the concrete thing inside the
+	// case the event is about (for the message rule: the message id). It
+	// is optional: a case-level event (a case being closed) has none.
+	SubjectID     string            `json:"subject_id"`
+	CaseGroup     string            `json:"case_group"`
+	CasePriority  string            `json:"case_priority"`
+	CaseStatus    string            `json:"case_status"`
+	CaseTags      string            `json:"case_tags"`
+	StaffID       string            `json:"staff_id"`
+	StaffFullName string            `json:"staff_full_name"`
+	UserFullName  string            `json:"user_full_name"`
+	UserEmail     string            `json:"user_email"`
+	UserID        string            `json:"user_id"`
+	UserLang      string            `json:"user_lang"`
+	CustomFields  map[string]string `json:"-"`
 }
 
 // CaseID is the OmniDesk case identifier. The webhook delivers it as a JSON

@@ -46,7 +46,12 @@ func (s *Service) Process(ctx context.Context, ev worker.Event) (EnqueueResult, 
 		return EnqueueResult{}, fmt.Errorf("event type %q: %w", ev.EventType, ErrEventNotAllowed)
 	}
 	res, err := s.db.NewInsert().
-		Model(&processedEventRow{BaseModel: bun.BaseModel{}, CaseID: ev.CaseID, EventType: ev.EventType}).
+		Model(&processedEventRow{
+			BaseModel: bun.BaseModel{},
+			CaseID:    ev.CaseID,
+			EventType: ev.EventType,
+			SubjectID: ev.SubjectID,
+		}).
 		Ignore().
 		Exec(ctx)
 	if err != nil {
@@ -82,17 +87,27 @@ func (s *Service) Process(ctx context.Context, ev worker.Event) (EnqueueResult, 
 // so the caller can return 500 and OmniDesk retries the event later. The
 // cleanup runs under a detached context so a request cancellation cannot
 // abort it and leave a permanent false-duplicate marker.
+//
+// The delete matches the whole dedup key (case_id, event_type, subject_id):
+// a case holds many events of the same type, and dropping the markers of the
+// other subjects would make them reprocessed later (double processing).
 func (s *Service) deleteMarker(ctx context.Context, ev worker.Event) {
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), markerDeleteTimeout)
 	defer cancel()
 	if _, err := s.db.NewDelete().
-		Model(&processedEventRow{BaseModel: bun.BaseModel{}, CaseID: ev.CaseID, EventType: ev.EventType}).
-		Where("case_id = ? AND event_type = ?", ev.CaseID, ev.EventType).
+		Model(&processedEventRow{
+			BaseModel: bun.BaseModel{},
+			CaseID:    ev.CaseID,
+			EventType: ev.EventType,
+			SubjectID: ev.SubjectID,
+		}).
+		Where("case_id = ? AND event_type = ? AND subject_id = ?", ev.CaseID, ev.EventType, ev.SubjectID).
 		Exec(ctx); err != nil {
 		s.logger.Error("failed to delete processed marker after full-queue handoff",
 			zap.Error(err),
 			zap.Int64("case_id", ev.CaseID),
 			zap.String("event_type", ev.EventType),
+			zap.String("subject_id", ev.SubjectID),
 		)
 	}
 }

@@ -184,3 +184,18 @@ func countMarkers(t *testing.T, db *bun.DB, caseID int64) int {
 	}
 	return count
 }
+
+// countMarkersBySubject counts the dedup markers of one case and one subject.
+// The subject is part of the dedup key, so the markers of the other subjects
+// of the same case are not counted.
+func countMarkersBySubject(t *testing.T, db *bun.DB, caseID int64, subjectID string) int {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	count, err := db.NewSelect().Table("processed_events").
+		Where("case_id = ? AND subject_id = ?", caseID, subjectID).Count(ctx)
+	if err != nil {
+		t.Fatalf("count markers by subject failed: %v", err)
+	}
+	return count
+}

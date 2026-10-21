@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -26,9 +27,10 @@ const processedEventsDDL = `
 		id BIGINT NOT NULL AUTO_INCREMENT,
 		case_id BIGINT NOT NULL,
 		event_type VARCHAR(64) NOT NULL,
+		subject_id VARCHAR(64) NOT NULL DEFAULT '',
 		created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 		PRIMARY KEY (id),
-		UNIQUE KEY uq_dedup (case_id, event_type)
+		UNIQUE KEY uq_dedup (case_id, event_type, subject_id)
 	) ENGINE = InnoDB`
 
 func webhookPayload(eventType string, caseID int64) string {
@@ -65,7 +67,7 @@ func newIntegrationApp(
 	})
 	v1 := app.Group("/api/v1")
 	v1.Use(validation.Middleware)
-	h := webhook.New(svc, cfg, validator.New())
+	h := webhook.New(svc, cfg, metrics, validator.New())
 	h.Register(v1)
 	return app, reg, workerSvc
 }
@@ -153,10 +155,14 @@ func TestWebhookDuplicateAccepted(t *testing.T) {
 }
 
 // TestWebhookChannelFullCompensates proves the full-queue handoff path: the
-// marker is deleted (compensating action), the handler returns 500, and a
-// retry after the queue drains succeeds. The queue is filled through the
-// webhook itself: the first event blocks the worker handler, the next two
-// fill the buffer.
+// marker of the failed event is deleted (compensating action), the handler
+// returns 500, and a retry after the queue drains succeeds. The queue is
+// filled through the webhook itself: the first event blocks the worker
+// handler, the next two fill the buffer.
+//
+// The compensating delete matches the whole dedup key, so the marker of the
+// other message of the same case survives: deleting it would make that event
+// processed twice later.
 func TestWebhookChannelFullCompensates(t *testing.T) {
 	t.Parallel()
 	db := setupTestDB(t)
@@ -174,13 +180,23 @@ func TestWebhookChannelFullCompensates(t *testing.T) {
 	}
 	app, reg, workerSvc := newIntegrationApp(t, db, 2, blocking)
 	base := time.Now().UnixNano()
-	blockedID := base + 3
+	caseID := base
+	keptSubjectID := "message-kept"
+	failedSubjectID := "message-failed"
+
+	// The worker handler blocks on the release channel: unblock it on
+	// cleanup too, so a failed assertion cannot leave the worker hanging.
+	var releaseOnce sync.Once
+	releaseWorker := func() { releaseOnce.Do(func() { close(release) }) }
 
 	stop := startWorker(t, workerSvc)
 	defer stop()
+	// Registered after the stop defer, so it runs first: the worker is
+	// unblocked before the stop waits for it to return.
+	defer releaseWorker()
 
 	// First event is consumed and blocks the worker handler.
-	resp := doPost(t, app, webhookPayload(ingest.EventTypeTicketMessageCreated, base), testSecret)
+	resp := doPost(t, app, webhookMessagePayload(caseID, keptSubjectID), testSecret)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("blocking event status = %d, want 200", resp.StatusCode)
 	}
@@ -197,24 +213,32 @@ func TestWebhookChannelFullCompensates(t *testing.T) {
 			t.Fatalf("filling event %d status = %d, want 200", i, r.StatusCode)
 		}
 	}
-	resp = doPost(t, app, webhookPayload(ingest.EventTypeTicketMessageCreated, blockedID), testSecret)
+	resp = doPost(t, app, webhookMessagePayload(caseID, failedSubjectID), testSecret)
 	if resp.StatusCode != http.StatusInternalServerError {
 		t.Fatalf("blocked event status = %d, want 500", resp.StatusCode)
 	}
 	if got := counterValue(t, reg, "assistant_webhook_enqueue_failures_total", nil); got != 1 {
 		t.Fatalf("enqueue failures = %v, want 1", got)
 	}
-	if got := countMarkers(t, db, blockedID); got != 0 {
-		t.Fatalf("processed markers after compensation = %d, want 0", got)
+	// Only the marker of the failed event is compensated.
+	if got := countMarkersBySubject(t, db, caseID, failedSubjectID); got != 0 {
+		t.Fatalf("processed markers of the failed subject = %d, want 0", got)
+	}
+	if got := countMarkersBySubject(t, db, caseID, keptSubjectID); got != 1 {
+		t.Fatalf("processed markers of the other subject = %d, want 1", got)
+	}
+	if got := countMarkers(t, db, caseID); got != 1 {
+		t.Fatalf("processed markers of the case = %d, want 1", got)
 	}
 
 	// Drain the queue; the retry then succeeds.
-	close(release)
-	resp = doPost(t, app, webhookPayload(ingest.EventTypeTicketMessageCreated, blockedID), testSecret)
+	releaseWorker()
+	waitForCounter(t, reg, map[string]string{"event": ingest.EventTypeTicketMessageCreated}, 3)
+	resp = doPost(t, app, webhookMessagePayload(caseID, failedSubjectID), testSecret)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("retry status = %d, want 200", resp.StatusCode)
 	}
-	if got := countMarkers(t, db, blockedID); got != 1 {
+	if got := countMarkersBySubject(t, db, caseID, failedSubjectID); got != 1 {
 		t.Fatalf("processed markers after retry = %d, want 1", got)
 	}
 	waitForCounter(t, reg, map[string]string{"event": ingest.EventTypeTicketMessageCreated}, 4)

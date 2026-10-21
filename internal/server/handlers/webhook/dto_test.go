@@ -28,6 +28,7 @@ func fullRequest() webhook.Request {
 		NoteText:        "",
 		LastMessage:     "<p>latest message</p>",
 		LastMessageID:   "638929422",
+		SubjectID:       "638929422",
 		CaseGroup:       "Поддержка",
 		CasePriority:    "Низкий",
 		CaseStatus:      "открытое",

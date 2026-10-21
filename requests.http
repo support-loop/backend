@@ -69,7 +69,7 @@ Content-Type: application/json
   "case_id": "423208679"
 }
 
-# Expect 401: wrong secret (auth_failures metric increments)
+# Expect 403: wrong secret (auth_failures metric increments)
 ###
 POST {{baseURL}}/api/v1/webhooks/omnidesk HTTP/1.1
 Authorization: wrong-secret

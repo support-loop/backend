@@ -54,8 +54,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/fiberfx.ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/fiberfx.ErrorResponse"
                         }
@@ -133,6 +133,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "staff_id": {
+                    "type": "string"
+                },
+                "subject_id": {
+                    "description": "SubjectID is the discriminator we inject into our own rule template\nbody, exactly like EventType: it names the concrete thing inside the\ncase the event is about (for the message rule: the message id). It\nis optional: a case-level event (a case being closed) has none.",
                     "type": "string"
                 },
                 "user_email": {
