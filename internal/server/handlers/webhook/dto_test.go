@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
@@ -59,6 +60,21 @@ func TestRequestValidation(t *testing.T) {
 		{name: "missing event type", mutate: func(r *webhook.Request) { r.EventType = "" }, wantErr: true},
 		{name: "missing case id", mutate: func(r *webhook.Request) { r.CaseID = 0 }, wantErr: true},
 		{name: "negative case id", mutate: func(r *webhook.Request) { r.CaseID = -1 }, wantErr: true},
+		{
+			name:    "oversized subject id",
+			mutate:  func(r *webhook.Request) { r.SubjectID = strings.Repeat("a", 65) },
+			wantErr: true,
+		},
+		{
+			name:    "oversized last message id",
+			mutate:  func(r *webhook.Request) { r.LastMessageID = strings.Repeat("a", 65) },
+			wantErr: true,
+		},
+		{
+			name:    "subject id at the column limit",
+			mutate:  func(r *webhook.Request) { r.SubjectID = strings.Repeat("a", 64) },
+			wantErr: false,
+		},
 		{
 			name:    "empty payload",
 			mutate:  func(r *webhook.Request) { r.EventType = ""; r.CaseID = 0 },

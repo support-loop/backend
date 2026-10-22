@@ -124,7 +124,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "last_message_id": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64
                 },
                 "note_text": {
                     "type": "string"
@@ -136,8 +137,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "subject_id": {
-                    "description": "SubjectID is the discriminator we inject into our own rule template\nbody, exactly like EventType: it names the concrete thing inside the\ncase the event is about (for the message rule: the message id). It\nis optional: a case-level event (a case being closed) has none.",
-                    "type": "string"
+                    "description": "SubjectID is the discriminator we inject into our own rule template\nbody, exactly like EventType: it names the concrete thing inside the\ncase the event is about (for the message rule: the message id). It\nis optional: a case-level event (a case being closed) has none.\n\nSubjectID and LastMessageID are bounded by the length of the\nprocessed_events.subject_id column (VARCHAR(64)): an oversized value\nwould be rejected by the database (500) or silently truncated (a\nwrong dedup key), so the DTO boundary rejects it with 400.",
+                    "type": "string",
+                    "maxLength": 64
                 },
                 "user_email": {
                     "type": "string"

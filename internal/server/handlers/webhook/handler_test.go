@@ -206,6 +206,22 @@ func TestWebhookNonStringCaseIDBadRequest(t *testing.T) {
 	}
 }
 
+// TestWebhookOversizedSubjectIDBadRequest proves a subject id longer than
+// the processed_events.subject_id column (VARCHAR(64)) is rejected at the
+// DTO boundary with 400, before the database is touched. Without the bound
+// the value would reach the database and fail there with a 500 (or be
+// truncated, producing a wrong dedup key).
+func TestWebhookOversizedSubjectIDBadRequest(t *testing.T) {
+	t.Parallel()
+	app, _ := newTestApp(testIngestConfig())
+	body := `{"event_type":"ticket.message.created","case_id":"123","subject_id":"` +
+		strings.Repeat("a", 65) + `"}`
+	resp := doPost(t, app, body, testSecret)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", resp.StatusCode)
+	}
+}
+
 func TestWebhookUnknownEventTypeIgnored(t *testing.T) {
 	t.Parallel()
 	app, reg := newTestApp(testIngestConfig())

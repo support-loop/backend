@@ -21,12 +21,17 @@ type Request struct {
 	CaseURL         string `json:"case_url"`
 	NoteText        string `json:"note_text"`
 	LastMessage     string `json:"last_message"`
-	LastMessageID   string `json:"last_message_id"`
+	LastMessageID   string `json:"last_message_id"  validate:"max=64"`
 	// SubjectID is the discriminator we inject into our own rule template
 	// body, exactly like EventType: it names the concrete thing inside the
 	// case the event is about (for the message rule: the message id). It
 	// is optional: a case-level event (a case being closed) has none.
-	SubjectID     string            `json:"subject_id"`
+	//
+	// SubjectID and LastMessageID are bounded by the length of the
+	// processed_events.subject_id column (VARCHAR(64)): an oversized value
+	// would be rejected by the database (500) or silently truncated (a
+	// wrong dedup key), so the DTO boundary rejects it with 400.
+	SubjectID     string            `json:"subject_id"      validate:"max=64"`
 	CaseGroup     string            `json:"case_group"`
 	CasePriority  string            `json:"case_priority"`
 	CaseStatus    string            `json:"case_status"`
