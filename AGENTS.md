@@ -1,4 +1,4 @@
-# go-project-template — AGENTS.md
+# support-loop — AGENTS.md
 
 ## Commands
 - `make deps` — go mod download
@@ -13,11 +13,10 @@
 
 ## Architecture
 - **Entrypoint**: main.go — swag //go:generate directive; version injected via ldflags (appVersion, appBuildDate, appReleaseID)
-- **CLI**: urfave/cli/v3 in internal/app.go — CLI shell with DefaultCommand "serve"; commands in internal/commands/{serve,example}/
-- **DI**: Fx graphs live in each command (internal/commands/serve/serve.go, internal/commands/example/example.go)
+- **CLI**: urfave/cli/v3 in internal/app.go — CLI shell with DefaultCommand "serve"; commands in internal/commands/serve/
+- **DI**: Fx graphs live in each command (internal/commands/serve/serve.go)
 - **Config**: go-core-fx/config — env vars + optional YAML via CONFIG_PATH env var
 - **HTTP**: Fiber at 127.0.0.1:3000, routes under /api/v1, validation middleware at group level
-- **Bot**: telego + telegofx (Telegram), proxy set via fasthttpproxy.FasthttpProxyHTTPDialer()
 - **DB**: MySQL/MariaDB via Bun (mysqldialect), Goose migrations in internal/db/migrations/ (//go:embed *.sql)
 - **Metrics**: Prometheus via fiberfx (auto), per-module counters via promauto
 
@@ -27,7 +26,7 @@
 - Internal-only deps use fx.Private
 - Services with Run(ctx) use `fxutil.RegisterRunnable[*T]()` — conditionally via `withRun` bool
 - Per-module named logger: logger.WithNamedLogger("name")
-- Config module maps raw Config struct to sub-configs for fiberfx, telegofx, sqlfx, openapi, example
+- Config module maps raw Config struct to sub-configs for fiberfx, sqlfx, openapi, ingest, worker
 
 ## Code Generation
 - Swagger docs: go generate ./... (swag init --parseDependency --outputTypes go -g ./main.go -o ./internal/server/docs)
@@ -44,7 +43,8 @@
 - Stale issues/PRs closed after 14d inactivity
 
 ## Testing
-- No tests exist yet — add _test.go as needed
+- Tests live next to the code: internal/ingest, internal/worker, internal/server/handlers/webhook
+- The webhook tests are database-backed: they apply the Goose migrations to the local MariaDB (port 3307, database support_loop_test) and skip when it is unreachable
 - Test flags: -race -shuffle=on -count=1 (disables cache, randomizes order)
 
 ## Build & Release

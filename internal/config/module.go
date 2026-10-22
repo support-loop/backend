@@ -4,7 +4,8 @@ import (
 	"github.com/go-core-fx/fiberfx"
 	"github.com/go-core-fx/fiberfx/openapi"
 	"github.com/go-core-fx/sqlfx"
-	"github.com/go-core-fx/telegofx"
+	"github.com/support-loop/backend/internal/ingest"
+	"github.com/support-loop/backend/internal/worker"
 	"go.uber.org/fx"
 )
 
@@ -27,11 +28,6 @@ func Module() fx.Option {
 					PublicPath: cfg.HTTP.OpenAPI.PublicPath,
 				}
 			},
-			func(cfg Config) telegofx.Config {
-				return telegofx.Config{
-					Token: cfg.Telegram.Token,
-				}
-			},
 			func(cfg Config) sqlfx.Config {
 				return sqlfx.Config{
 					URL:             cfg.Database.URL,
@@ -39,6 +35,18 @@ func Module() fx.Option {
 					ConnMaxLifetime: cfg.Database.ConnMaxLifetime,
 					MaxOpenConns:    cfg.Database.MaxOpenConns,
 					MaxIdleConns:    cfg.Database.MaxIdleConns,
+				}
+			},
+			func(cfg Config) ingest.Config {
+				return ingest.Config{
+					Secret:        cfg.Webhook.Secret,
+					SecretHeader:  cfg.Webhook.SecretHeader,
+					AllowedEvents: cfg.Webhook.AllowedEvents,
+				}
+			},
+			func(cfg Config) worker.Config {
+				return worker.Config{
+					QueueSize: cfg.Worker.QueueSize,
 				}
 			},
 		),

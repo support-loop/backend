@@ -22,7 +22,140 @@ const docTemplate = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/webhooks/omnidesk": {
+            "post": {
+                "description": "Accepts an authored webhook event, deduplicates it and enqueues it for processing",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "webhook"
+                ],
+                "summary": "Receive OmniDesk webhook",
+                "parameters": [
+                    {
+                        "description": "Webhook payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/webhook.Request"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/fiberfx.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/fiberfx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/fiberfx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "fiberfx.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "details": {},
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "webhook.Request": {
+            "type": "object",
+            "required": [
+                "case_id",
+                "event_type"
+            ],
+            "properties": {
+                "case_description": {
+                    "type": "string"
+                },
+                "case_group": {
+                    "type": "string"
+                },
+                "case_id": {
+                    "type": "integer"
+                },
+                "case_number": {
+                    "type": "string"
+                },
+                "case_priority": {
+                    "type": "string"
+                },
+                "case_status": {
+                    "type": "string"
+                },
+                "case_subject": {
+                    "type": "string"
+                },
+                "case_tags": {
+                    "type": "string"
+                },
+                "case_url": {
+                    "type": "string"
+                },
+                "event_type": {
+                    "type": "string"
+                },
+                "last_message": {
+                    "type": "string"
+                },
+                "last_message_id": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "note_text": {
+                    "type": "string"
+                },
+                "staff_full_name": {
+                    "type": "string"
+                },
+                "staff_id": {
+                    "type": "string"
+                },
+                "subject_id": {
+                    "description": "SubjectID is the discriminator we inject into our own rule template\nbody, exactly like EventType: it names the concrete thing inside the\ncase the event is about (for the message rule: the message id). It\nis optional: a case-level event (a case being closed) has none.\n\nSubjectID and LastMessageID are bounded by the length of the\nprocessed_events.subject_id column (VARCHAR(64)): an oversized value\nwould be rejected by the database (500) or silently truncated (a\nwrong dedup key), so the DTO boundary rejects it with 400.",
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "user_email": {
+                    "type": "string"
+                },
+                "user_full_name": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "user_lang": {
+                    "type": "string"
+                }
+            }
+        }
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it

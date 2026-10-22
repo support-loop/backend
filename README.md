@@ -11,21 +11,21 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/capcom6/go-project-template">
+  <a href="https://github.com/support-loop/backend">
     <img src="https://raw.githubusercontent.com/golang-samples/gopher-vector/master/gopher.png" alt="Logo" width="120" height="120">
   </a>
 
-<h3 align="center">go-project-template</h3>
+<h3 align="center">support-loop</h3>
 
   <p align="center">
-    Opinionated Go service template with Fiber API, OpenAPI docs, Telegram bot wiring, health endpoints, and Fx-based modular DI.
+    Opinionated Go service template with Fiber API, OpenAPI docs, health endpoints, and Fx-based modular DI.
     <br />
-    <a href="https://github.com/capcom6/go-project-template"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/support-loop/backend"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/capcom6/go-project-template/issues">Report Bug</a>
+    <a href="https://github.com/support-loop/backend/issues">Report Bug</a>
     ·
-    <a href="https://github.com/capcom6/go-project-template/issues">Request Feature</a>
+    <a href="https://github.com/support-loop/backend/issues">Request Feature</a>
   </p>
 </div>
 
@@ -54,10 +54,10 @@ This repository is a production-oriented starter for backend services in Go. It 
 * HTTP server bootstrapped with Fiber and dependency injection via Uber Fx.
 * Version + health endpoints using `healthfx`.
 * Swagger/OpenAPI docs endpoint under `/api/v1/docs`.
-* Telegram bot integration (`/start` command handler included).
-* Modular business domain example with CLI commands (serve, one-shot tasks).
+* OmniDesk webhook ingest with persistent deduplication and an in-process background worker.
+* Modular business domain packages with CLI commands (serve).
 
-Use this template when you want a fast path to shipping APIs and bot workflows with a clean module layout.
+Use this template when you want a fast path to shipping APIs with a clean module layout.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -69,7 +69,6 @@ Use this template when you want a fast path to shipping APIs and bot workflows w
 * [![Fx][fx-shield]][fx-url]
 * [![CLI][cli-shield]][cli-url]
 * [![Swagger][swagger-shield]][swagger-url]
-* [![Telegram][telegram-shield]][telegram-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -99,8 +98,8 @@ Follow these steps to run the service locally.
 
 1. Clone the repo.
    ```sh
-   git clone https://github.com/capcom6/go-project-template.git
-   cd go-project-template
+   git clone https://github.com/support-loop/backend.git
+   cd backend
    ```
 2. Download dependencies.
    ```sh
@@ -139,7 +138,6 @@ CLI commands:
 ```sh
 go run . --help                     # list commands
 go run . serve                      # explicit serve
-go run . example                    # one-shot demo
 go run . --version                  # print version
 ```
 
@@ -157,7 +155,7 @@ Configuration:
   ```sh
   export CONFIG_PATH=./config.local.yaml
   ```
-* Telegram token is configured via the app config (`telegram.token`) and required to use bot handlers.
+* The webhook shared secret and the allowed event types are configured via the app config (`webhook.secret`, `webhook.allowed_events`).
 
 Quality checks:
 
@@ -177,12 +175,12 @@ make coverage
 
 - [x] Fiber API scaffold
 - [x] OpenAPI + Swagger integration
-- [x] Telegram bot wiring
+- [x] OmniDesk webhook ingest with deduplication
 - [ ] Database module integration
 - [ ] Auth middleware and RBAC
 - [ ] CI release pipeline hardening
 
-See the [open issues](https://github.com/capcom6/go-project-template/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/support-loop/backend/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -220,7 +218,7 @@ Distributed under the Apache 2.0 License. See `LICENSE` for more information.
 
 Maintainer: [@capcom6](https://github.com/capcom6)
 
-Project Link: [https://github.com/capcom6/go-project-template](https://github.com/capcom6/go-project-template)
+Project Link: [https://github.com/support-loop/backend](https://github.com/support-loop/backend)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -232,7 +230,6 @@ Project Link: [https://github.com/capcom6/go-project-template](https://github.co
 * [Best README Template](https://github.com/othneildrew/Best-README-Template)
 * [Go Fiber](https://github.com/gofiber/fiber)
 * [Uber Fx](https://github.com/uber-go/fx)
-* [Telego](https://github.com/mymmrac/telego)
 * [Shields.io](https://shields.io)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -241,15 +238,15 @@ Project Link: [https://github.com/capcom6/go-project-template](https://github.co
 
 <!-- MARKDOWN LINKS & IMAGES -->
 [contributors-shield]: https://img.shields.io/github/contributors/capcom6/go-project-template.svg?style=for-the-badge
-[contributors-url]: https://github.com/capcom6/go-project-template/graphs/contributors
+[contributors-url]: https://github.com/support-loop/backend/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/capcom6/go-project-template.svg?style=for-the-badge
-[forks-url]: https://github.com/capcom6/go-project-template/network/members
+[forks-url]: https://github.com/support-loop/backend/network/members
 [stars-shield]: https://img.shields.io/github/stars/capcom6/go-project-template.svg?style=for-the-badge
-[stars-url]: https://github.com/capcom6/go-project-template/stargazers
+[stars-url]: https://github.com/support-loop/backend/stargazers
 [issues-shield]: https://img.shields.io/github/issues/capcom6/go-project-template.svg?style=for-the-badge
-[issues-url]: https://github.com/capcom6/go-project-template/issues
+[issues-url]: https://github.com/support-loop/backend/issues
 [license-shield]: https://img.shields.io/github/license/capcom6/go-project-template.svg?style=for-the-badge
-[license-url]: https://github.com/capcom6/go-project-template/blob/master/LICENSE
+[license-url]: https://github.com/support-loop/backend/blob/master/LICENSE
 [go-shield]: https://img.shields.io/badge/go-1.25%2B-00ADD8?style=for-the-badge&logo=go
 [go-url]: https://go.dev/
 [fiber-shield]: https://img.shields.io/badge/Fiber-v2-00b894?style=for-the-badge
@@ -260,5 +257,3 @@ Project Link: [https://github.com/capcom6/go-project-template](https://github.co
 [cli-url]: https://github.com/urfave/cli
 [swagger-shield]: https://img.shields.io/badge/OpenAPI-Swagger-85EA2D?style=for-the-badge
 [swagger-url]: https://github.com/swaggo/swag
-[telegram-shield]: https://img.shields.io/badge/Telegram-Bot-26A5E4?style=for-the-badge&logo=telegram
-[telegram-url]: https://core.telegram.org/bots
