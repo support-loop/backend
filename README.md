@@ -15,10 +15,10 @@
     <img src="https://raw.githubusercontent.com/golang-samples/gopher-vector/master/gopher.png" alt="Logo" width="120" height="120">
   </a>
 
-<h3 align="center">go-project-template</h3>
+<h3 align="center">support-loop</h3>
 
   <p align="center">
-    Opinionated Go service template with Fiber API, OpenAPI docs, Telegram bot wiring, health endpoints, and Fx-based modular DI.
+    Opinionated Go service template with Fiber API, OpenAPI docs, health endpoints, and Fx-based modular DI.
     <br />
     <a href="https://github.com/support-loop/backend"><strong>Explore the docs »</strong></a>
     <br />
@@ -54,10 +54,10 @@ This repository is a production-oriented starter for backend services in Go. It 
 * HTTP server bootstrapped with Fiber and dependency injection via Uber Fx.
 * Version + health endpoints using `healthfx`.
 * Swagger/OpenAPI docs endpoint under `/api/v1/docs`.
-* Telegram bot integration (`/start` command handler included).
-* Modular business domain example with CLI commands (serve, one-shot tasks).
+* OmniDesk webhook ingest with persistent deduplication and an in-process background worker.
+* Modular business domain packages with CLI commands (serve).
 
-Use this template when you want a fast path to shipping APIs and bot workflows with a clean module layout.
+Use this template when you want a fast path to shipping APIs with a clean module layout.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -69,7 +69,6 @@ Use this template when you want a fast path to shipping APIs and bot workflows w
 * [![Fx][fx-shield]][fx-url]
 * [![CLI][cli-shield]][cli-url]
 * [![Swagger][swagger-shield]][swagger-url]
-* [![Telegram][telegram-shield]][telegram-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -139,7 +138,6 @@ CLI commands:
 ```sh
 go run . --help                     # list commands
 go run . serve                      # explicit serve
-go run . example                    # one-shot demo
 go run . --version                  # print version
 ```
 
@@ -157,7 +155,7 @@ Configuration:
   ```sh
   export CONFIG_PATH=./config.local.yaml
   ```
-* Telegram token is configured via the app config (`telegram.token`) and required to use bot handlers.
+* The webhook shared secret and the allowed event types are configured via the app config (`webhook.secret`, `webhook.allowed_events`).
 
 Quality checks:
 
@@ -177,7 +175,7 @@ make coverage
 
 - [x] Fiber API scaffold
 - [x] OpenAPI + Swagger integration
-- [x] Telegram bot wiring
+- [x] OmniDesk webhook ingest with deduplication
 - [ ] Database module integration
 - [ ] Auth middleware and RBAC
 - [ ] CI release pipeline hardening
@@ -232,7 +230,6 @@ Project Link: [https://github.com/support-loop/backend](https://github.com/suppo
 * [Best README Template](https://github.com/othneildrew/Best-README-Template)
 * [Go Fiber](https://github.com/gofiber/fiber)
 * [Uber Fx](https://github.com/uber-go/fx)
-* [Telego](https://github.com/mymmrac/telego)
 * [Shields.io](https://shields.io)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -260,5 +257,3 @@ Project Link: [https://github.com/support-loop/backend](https://github.com/suppo
 [cli-url]: https://github.com/urfave/cli
 [swagger-shield]: https://img.shields.io/badge/OpenAPI-Swagger-85EA2D?style=for-the-badge
 [swagger-url]: https://github.com/swaggo/swag
-[telegram-shield]: https://img.shields.io/badge/Telegram-Bot-26A5E4?style=for-the-badge&logo=telegram
-[telegram-url]: https://core.telegram.org/bots

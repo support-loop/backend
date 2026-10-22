@@ -26,7 +26,7 @@ import (
 func Command(version healthfx.Version) *cli.Command {
 	return &cli.Command{
 		Name:  "serve",
-		Usage: "Start the HTTP server, Telegram bot, and all services",
+		Usage: "Start the HTTP server and all services",
 		Action: func(ctx context.Context, _ *cli.Command) error {
 			return run(ctx, version)
 		},
@@ -53,7 +53,6 @@ func run(ctx context.Context, version healthfx.Version) error {
 		// redisfx.Module(),
 		sqlfx.Module(),
 		// sqlxfx.Module(),
-		// telegofx.Module(true),
 		validatorfx.Module(),
 		// watermillfx.Module(),
 		//
