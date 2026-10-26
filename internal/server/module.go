@@ -1,7 +1,6 @@
 package server
 
 import (
-	"github.com/capcom6/go-project-template/internal/server/docs"
 	"github.com/go-core-fx/fiberfx"
 	"github.com/go-core-fx/fiberfx/handler"
 	"github.com/go-core-fx/fiberfx/health"
@@ -9,6 +8,8 @@ import (
 	"github.com/go-core-fx/fiberfx/validation"
 	"github.com/go-core-fx/logger"
 	"github.com/gofiber/fiber/v2"
+	"github.com/support-loop/backend/internal/server/docs"
+	"github.com/support-loop/backend/internal/server/handlers/webhook"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -32,10 +33,10 @@ func Module() fx.Option {
 			fx.Private,
 		),
 
-		// fx.Provide(
-		// 	fx.Annotate(example.New, fx.ResultTags(`group:"handlers"`)),
-		// 	fx.Private,
-		// ),
+		fx.Provide(
+			fx.Annotate(webhook.New, fx.ResultTags(`group:"handlers"`)),
+			fx.Private,
+		),
 
 		fx.Invoke(
 			fx.Annotate(
@@ -47,6 +48,8 @@ func Module() fx.Option {
 					v1 := app.Group("/api/v1")
 					openapiHandler.Register(v1.Group("/docs"))
 
+					// Body-validation middleware stays at the API group;
+					// error mapping is owned by each handler group.
 					v1.Use(validation.Middleware)
 
 					for _, h := range handlers {
