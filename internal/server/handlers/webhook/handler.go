@@ -1,0 +1,115 @@
+// Package webhook exposes the OmniDesk webhook endpoint.
+package webhook
+
+import (
+	"bytes"
+	"fmt"
+
+	"github.com/go-core-fx/fiberfx"
+	"github.com/go-core-fx/fiberfx/handler"
+	"github.com/go-core-fx/fiberfx/validation"
+	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/keyauth"
+	"github.com/support-loop/backend/internal/ingest"
+	"github.com/support-loop/backend/internal/worker"
+)
+
+// Handler exposes the webhook endpoint over HTTP.
+type Handler struct {
+	handler.Base
+
+	ingestSvc *ingest.Service
+}
+
+// New creates a new webhook HTTP handler.
+func New(
+	service *ingest.Service,
+	validator *validator.Validate,
+) handler.Handler {
+	return &Handler{
+		Base: handler.Base{
+			Validator: validator,
+		},
+		ingestSvc: service,
+	}
+}
+
+// Register registers the webhook routes. The group owns its error handler:
+// errors from the routes are mapped to HTTP responses here, at the same
+// level as the handlers that return them.
+func (h *Handler) Register(r fiber.Router) {
+	g := r.Group("/webhooks")
+	g.Use(errorHandler)
+	g.Post("/omnidesk", h.auth(), validation.DecorateWithBodyEx(h.Validator, h.post))
+}
+
+// auth returns the Fiber keyauth middleware protecting the webhook. The
+// shared secret travels in the fixed Authorization header; the value format
+// (raw token vs Bearer vs Basic) is unverified (W5), so the raw header value
+// is compared constant-time against the configured secret by the ingest
+// service.
+//
+// The middleware stays in the HTTP layer: a rejected request never reaches
+// the ingest pipeline, so the service cannot count it.
+func (h *Handler) auth() fiber.Handler {
+	return keyauth.New(keyauth.Config{
+		KeyLookup:  "header:" + h.ingestSvc.SecretHeader(),
+		AuthScheme: "",
+		Validator: func(_ *fiber.Ctx, key string) (bool, error) {
+			return h.ingestSvc.ValidateSecret(key), nil
+		},
+		ErrorHandler: func(c *fiber.Ctx, _ error) error {
+			return c.Status(fiber.StatusUnauthorized).JSON(
+				fiberfx.NewErrorResponse("unauthorized", fiber.StatusUnauthorized, nil),
+			)
+		},
+	})
+}
+
+//	@Summary		Receive OmniDesk webhook
+//	@Description	Accepts an authored webhook event, deduplicates it and enqueues it for processing
+//	@Tags			webhook
+//	@Accept			json
+//	@Param			request	body	Request	true	"Webhook payload"
+//	@Success		200
+//	@Failure		400	{object}	fiberfx.ErrorResponse
+//	@Failure		403	{object}	fiberfx.ErrorResponse
+//	@Failure		500	{object}	fiberfx.ErrorResponse
+//	@Router			/webhooks/omnidesk [post]
+//
+// Post handles the webhook. The body is parsed and validated by
+// DecorateWithBodyEx; the service deduplicates and enqueues. Domain errors
+// are converted to HTTP responses by this group's error handler.
+func (h *Handler) post(c *fiber.Ctx, req *Request) error {
+	if _, err := h.ingestSvc.Process(c.Context(), worker.Event{
+		EventType: req.EventType,
+		CaseID:    int64(req.CaseID),
+		SubjectID: resolveSubjectID(req),
+		Payload:   bytes.Clone(c.Body()),
+	}); err != nil {
+		return fmt.Errorf("process webhook event: %w", err)
+	}
+	return nil
+}
+
+// resolveSubjectID returns the normalized subject id of the event: the
+// identity of the concrete thing the event is about, within the case.
+//
+// Two body shapes must work:
+//
+//  1. Our own rule template injects "subject_id" as a field of our contract
+//     (for the message rule: "[last_message_id]"), exactly like it injects
+//     "event_type".
+//  2. The rule may be configured with the standard OmniDesk body instead,
+//     which carries the native "last_message_id" field.
+//
+// The injected field wins, the native field is the fallback. With neither the
+// subject is empty and the event deduplicates at case level, which is
+// correct for one-shot case events (for example "ticket.closed").
+func resolveSubjectID(req *Request) string {
+	if req.SubjectID != "" {
+		return req.SubjectID
+	}
+	return req.LastMessageID
+}
